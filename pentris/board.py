@@ -6,7 +6,7 @@ at runtime.
 
 """
 
-import factory, pygame
+import pygame
 from pygame.locals import *
 
 class Board:
@@ -132,3 +132,16 @@ class Board:
 					return False
 
 		return True
+
+	def addPentominoToBoard(self, pentomino):
+		# Permanently adds the specified pentomino to the board!
+
+		if not self.isPentominoValid(pentomino):
+			raise ValueError("pentomino cannot fit on the board!")
+
+		template = pentomino.getCurrentTemplate()
+
+		for y in range(len(template)):
+			for x in range(len(template[0])):
+				if (template[y][x] != self.EMPTY):
+					self.board[pentomino.y + y][pentomino.x + x] = pentomino.color
