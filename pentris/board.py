@@ -13,6 +13,26 @@ class Board:
 
 	EMPTY = "."
 
+	# COLOR DEFINITIONS
+	#          ( R ,  G ,  B )
+	BLUE     = (  0,   0, 255)
+	FUSCHIA  = (255,   0, 255)
+	GREEN    = (  0, 128,   0)
+	AQUA     = (  0, 255, 255)
+	BLACK    = (  0,   0,   0)
+	LIME     = (  0, 255,   0)
+	NAVY_BLU = (  0,   0, 128)
+	PURPLE   = (128,   0, 128)
+	RED      = (255,   0,   0)
+	SILVER   = (192, 192, 192)
+	TEAL     = (  0, 128, 128)
+	WHITE    = (255, 255, 255)
+	YELLOW   = (255, 255,   0)
+
+	COLORS = (AQUA, BLUE, FUSCHIA, GREEN, LIME, NAVY_BLU, PURPLE,
+				RED, SILVER, TEAL, WHITE, YELLOW)
+
+
 	def __init__(self, board_width, board_height, mino_size):
 		# Create an empty board and store instance variables
 		self.board = []
@@ -54,3 +74,30 @@ class Board:
 				numLines += 1
 
 		return numLines
+
+	def drawBoard(self, spritebatch, x_coord, y_coord):
+		# draws the board and its contents
+		# x_coord and y_coord, where to draw the board, are to be handled by client functions
+
+		# draws border around the board
+		pygame.draw.rect(spritebatch, self.SILVER, (x_coord, y_coord-7, 
+			(self.BOARD_WIDTH*self.MINO_SIZE)+8, (self.BOARD_HEIGHT*self.MINO_SIZE)+8), 5)
+
+		# fills the background of the board
+		pygame.draw.rect(spritebatch, self.BLACK, 
+			(x_coord, y_coord, self.MINO_SIZE*self.BOARD_WIDTH, self.MINO_SIZE*self.BOARD_HEIGHT))
+
+		# draws each individual mino on the board
+		for y in range(self.BOARD_HEIGHT):
+			for x in range(self.BOARD_WIDTH):
+				if board[y][x] != ".":
+					self.drawBox(spritebatch, x, y, board[y][x], x_coord, y_coord)
+
+	def drawBox(self, spritebatch, mino_x, mino_y, color, board_x, board_y):
+		# color should be an RGB tuple
+		# mino_x and mino_y are the INDICIES of the minos on the board, NOT their pixel locations
+		# board_x and board_y ARE the pixel locations of the top-left corner of the board
+		pixel_x = board_x + (mino_x * self.MINO_SIZE)
+		pixel_y = board_y + (mino_y * self.MINO_SIZE)
+
+		pygame.draw.rect(spritebatch, color, (pixel_x+1, pixel_y+1, self.MINO_SIZE-1, self.MINO_SIZE-1))
