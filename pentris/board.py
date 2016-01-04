@@ -111,9 +111,11 @@ class Board:
 					self.drawMino(spritebatch, pentomino.x, pentomino.y, pentomino.color, board_x, board_y)
 
 	def isOnTheBoard(self, x, y):
-    	return x >= 0 and x < self.BOARD_WIDTH and y < self.BOARD_HEIGHT
+		return x >= 0 and x < self.BOARD_WIDTH and y < self.BOARD_HEIGHT
 
 	def isPentominoValid(self, pentomino):
+		# checks whether the supposed pentomino can be drawn on the board in its current stae
+		# if any mino is out of bounds or is colliding with an existing mino, then returns False
 		template = pentomino.getCurrentTemplate()
 
 		for y in range(len(template)):
