@@ -91,9 +91,9 @@ class Board:
 		for y in range(self.BOARD_HEIGHT):
 			for x in range(self.BOARD_WIDTH):
 				if board[y][x] != ".":
-					self.drawBox(spritebatch, x, y, board[y][x], x_coord, y_coord)
+					self.drawMino(spritebatch, x, y, board[y][x], x_coord, y_coord)
 
-	def drawBox(self, spritebatch, mino_x, mino_y, color, board_x, board_y):
+	def drawMino(self, spritebatch, mino_x, mino_y, color, board_x, board_y):
 		# color should be an RGB tuple
 		# mino_x and mino_y are the INDICIES of the minos on the board, NOT their pixel locations
 		# board_x and board_y ARE the pixel locations of the top-left corner of the board
@@ -101,3 +101,32 @@ class Board:
 		pixel_y = board_y + (mino_y * self.MINO_SIZE)
 
 		pygame.draw.rect(spritebatch, color, (pixel_x+1, pixel_y+1, self.MINO_SIZE-1, self.MINO_SIZE-1))
+
+	def drawPentomino(self, spritebatch, pentomino, board_x, board_y):
+		template = pentomino.getCurrentTemplate()
+
+		for y in range(len(template)):
+			for x in range(len(template[0])):
+				if (template[y][x] != self.EMPTY):
+					self.drawMino(spritebatch, pentomino.x, pentomino.y, pentomino.color, board_x, board_y)
+
+	def isOnTheBoard(self, x, y):
+    	return x >= 0 and x < self.BOARD_WIDTH and y < self.BOARD_HEIGHT
+
+	def isPentominoValid(self, pentomino):
+		template = pentomino.getCurrentTemplate()
+
+		for y in range(len(template)):
+			for x in range(len(template[0])):
+				if (template[y][x] == self.EMPTY):
+					continue
+
+				mino_x = pentomino.x + x
+				mino_y = pentomino.y + y
+
+				if not isOnTheBoard(mino_x, mino_y):
+					return False
+				if self.board[mino_y][mino_x] != self.EMPTY:
+					return False
+
+		return True
