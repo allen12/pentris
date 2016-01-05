@@ -44,11 +44,11 @@ class Board:
 
 	def isLineComplete(self, y):
 		#  Given a specific row on the board, return whether the row is filled with minos.
-		if y < 0 or y >= self.BOARD_WIDTH:
+		if y < 0 or y >= self.BOARD_HEIGHT:
 			raise ValueError("passed-in y does not exist on the board!")
 
 		for x in range(self.BOARD_WIDTH):
-			if self.board[y][x] == EMPTY:
+			if self.board[y][x] == self.EMPTY:
 				return False
 
 		return True
@@ -106,7 +106,7 @@ class Board:
 		for y in range(len(template)):
 			for x in range(len(template[0])):
 				if (template[y][x] != self.EMPTY):
-					self.drawMino(spritebatch, pentomino.x, pentomino.y, pentomino.color, board_x, board_y)
+					self.drawMino(spritebatch, x + pentomino.x, y + pentomino.y, pentomino.color, board_x, board_y)
 
 	def isOnTheBoard(self, x, y):
 		return x >= 0 and x < self.BOARD_WIDTH and y < self.BOARD_HEIGHT
@@ -124,8 +124,13 @@ class Board:
 				mino_x = pentomino.x + x
 				mino_y = pentomino.y + y
 
-				if not isOnTheBoard(mino_x, mino_y):
+				# TEMP BUG FIX: sometimes mino_y is -1 for some reason
+				if mino_y == -1:
+					continue
+
+				if not self.isOnTheBoard(mino_x, mino_y):
 					return False
+
 				if self.board[mino_y][mino_x] != self.EMPTY:
 					return False
 

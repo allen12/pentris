@@ -4,11 +4,14 @@ blocks (pentominos).
 Allen Cheng | allen12@umd.edu | computer_allen@yahoo.com
 """
 
+from copy import deepcopy
 import random, time, pygame, sys
 from pygame.locals import *
+
 from board import Board
 from factory import Factory
 from pentomino import Pentomino
+
 
 FPS = 60  # because every game should run at 60 fps!
 
@@ -16,7 +19,7 @@ WINDOW_WIDTH = 900      # can be adjusted
 WINDOW_HEIGHT = 675     # 4:3 aspect ratio preferred
 
 MINO_SIZE = 26      # Length and width of a single mino block
-BOARD_MINO_WIDTH = 10    # Number of minos te width of the playing field
+BOARD_MINO_WIDTH = 12    # Number of minos te width of the playing field
 BOARD_MINO_HEIGHT = 20   # Number of minos the height
 
 BOARD_WIDTH = MINO_SIZE * BOARD_MINO_WIDTH     # Pixel width of board
@@ -68,10 +71,6 @@ def main():
 	pygame.mixer.music.load('tetris.mid')   # start playing the tetris music
 	pygame.mixer.music.play(-1, 0.0)        # loop indefinitely
 	play()
-
-	while True:
-		pass
-
 	pygame.mixer.music.stop()
 	quit()
 
@@ -85,16 +84,20 @@ def play():
 	lastPlayerDownTime =  time.time()      # last time the player soft drops
 	lastPlayerSidewaysTime = time.time()   # last time the player moves a piece sideways
 
-	PENTOMINO_START_X = BOARD_MINO_WIDTH // 2 - 1    # coordinates of starting location
+	PENTOMINO_START_X = BOARD_MINO_WIDTH // 2 - 3   # coordinates of starting location
 
 	currentPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 	nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 
 	goingDown = goingLeft = goingRight = False
 	level = score = 0
+	lines = 0
 	fallTime = 0.5                         # how many seconds pass for piece to auto-fall one space
 
 	while True: # infinite game loop
+
+		if (currentPiece != None):
+			print("currentPiece: " + str(currentPiece.x) + " " + str(currentPiece.y))
 
 		checkQuit()
 
@@ -104,12 +107,21 @@ def play():
 			nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 
 			# new piece can't fit on the board, game over!
-			if board.isPentominoValid(currentPiece) == False:
+			if not board.isPentominoValid(currentPiece):
 				return
 
 		handlePentominoMovement(board, currentPiece, goingDown, goingLeft, goingRight)
 
-		draw(board)
+		# if current pieece has landed on the board, then clear any complete lines
+		if handlePentominoFall(board, currentPiece, fallTime):
+			board.addPentominoToBoard(currentPiece)
+			currentPiece = None
+			lines_cleared = board.checkForCompleteLines()
+			lines += lines_cleared
+			score += int(2250*lines_cleared**2 - 3850*lines_cleared + 900)
+			level = lines // 10
+
+		draw(board, currentPiece)
 		FPS_CLOCK.tick(FPS)
 
 def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
@@ -137,9 +149,31 @@ def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
 			else:
 				lastPlayerDownTime = time.time()
 
-def draw(board):
+
+def handlePentominoFall(board, pentomino, fallTime):
+	# Handles the natural fall of the pentomino without user action.
+	# Returns True if the pentomino has landed as far as possible and is ready
+	# to be permanently added to the board
+	global lastFallTime
+
+	if time.time() - lastFallTime > fallTime:
+		pentomino_copy = deepcopy(pentomino)
+		pentomino_copy.moveDown()
+
+		if board.isPentominoValid(pentomino_copy):
+			pentomino.moveDown()
+			lastFallTime = time.time()
+			return False
+		else:
+			return True
+
+def draw(board, pentomino):
 	SPRITEBATCH.fill(BLACK)
 	board.drawBoard(SPRITEBATCH, LEFT_RIGHT_MARGIN, TOP_MARGIN)
+
+	if pentomino != None:
+		board.drawPentomino(SPRITEBATCH, pentomino, LEFT_RIGHT_MARGIN, TOP_MARGIN)
+
 	pygame.display.update()
 
 def checkQuit():
