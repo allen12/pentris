@@ -1,9 +1,6 @@
-"""
-
-Board class representing the playing field. The board matrix holds data
+"""Board class representing the playing field. The board matrix holds data
 about colors and is represented by a grid of arbitrary size, constructed
 at runtime.
-
 """
 
 import pygame
