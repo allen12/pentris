@@ -25,6 +25,9 @@ BOARD_HEIGHT = MINO_SIZE * BOARD_MINO_HEIGHT   # Pixel height of board
 LEFT_RIGHT_MARGIN = (WINDOW_WIDTH - BOARD_WIDTH)//2
 TOP_MARGIN = WINDOW_HEIGHT - BOARD_HEIGHT - 10
 
+MOVE_SIDEWAYS_TIME = 0.10      # delay to keep moving a pentomino sideways
+SOFT_DROP_TIME = 0.08          # delay to keep soft dropping a pentomino
+
 # COLOR DEFINITIONS
 #          ( R ,  G ,  B )
 BLUE     = (  0,   0, 255)
@@ -50,9 +53,8 @@ def main():
 	FPS_CLOCK = pygame.time.Clock()
 	SPRITEBATCH = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 	pygame.display.set_caption("Pentris")
-	
-	screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-	background = pygame.Surface(screen.get_size())
+
+	background = pygame.Surface(SPRITEBATCH.get_size())
 	background = background.convert()
 	background.fill((0, 0, 0))
 	font = pygame.font.Font(None, 255)
@@ -60,7 +62,7 @@ def main():
 	textpos = text.get_rect()
 	textpos.centerx = background.get_rect().centerx
 	background.blit(text, textpos)
-	screen.blit(background, (0, WINDOW_HEIGHT//2 - 100))
+	SPRITEBATCH.blit(background, (0, WINDOW_HEIGHT//2 - 100))
 	pygame.display.flip()
 
 	pygame.mixer.music.load('tetris.mid')   # start playing the tetris music
@@ -74,12 +76,90 @@ def main():
 	quit()
 
 def play():
-	board = Board(BOARD_WIDTH, BOARD_HEIGHT, MINO_SIZE)
-	
+	board = Board(BOARD_MINO_WIDTH, BOARD_MINO_HEIGHT, MINO_SIZE)
+	factory = Factory()
+
+	global lastFallTime, lastPlayerDownTime, lastPlayerSidewaysTime
+
+	lastFallTime = time.time()             # last time the piece fell downwards by itself
+	lastPlayerDownTime =  time.time()      # last time the player soft drops
+	lastPlayerSidewaysTime = time.time()   # last time the player moves a piece sideways
+
+	PENTOMINO_START_X = BOARD_MINO_WIDTH // 2 - 1    # coordinates of starting location
+
+	currentPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
+	nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
+
+	goingDown = goingLeft = goingRight = False
+	level = score = 0
+	fallTime = 0.5                         # how many seconds pass for piece to auto-fall one space
+
+	while True: # infinite game loop
+
+		checkQuit()
+
+		# check if there is currently a pentomino in play. if not, generate a new one
+		if currentPiece == None: 
+			currentPiece = nextPiece
+			nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
+
+			# new piece can't fit on the board, game over!
+			if board.isPentominoValid(currentPiece) == False:
+				return
+
+		handlePentominoMovement(board, currentPiece, goingDown, goingLeft, goingRight)
+
+		draw(board)
+		FPS_CLOCK.tick(FPS)
+
+def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
+	global lastPlayerDownTime, lastPlayerSidewaysTime
+
+	if time.time() - lastPlayerSidewaysTime > MOVE_SIDEWAYS_TIME:
+		if goingLeft:
+			pentomino.moveLeft()
+			if not board.isPentominoValid(pentomino):
+				pentomino.moveRight()
+			else:
+				lastPlayerSidewaysTime = time.time()
+		if goingRight:
+			pentomino.moveRight()
+			if not board.isPentominoValid(pentomino):
+				pentomino.moveLeft()
+			else:
+				lastPlayerSidewaysTime = time.time()
+
+	if time.time() - lastPlayerDownTime > SOFT_DROP_TIME:
+		if goingDown:
+			pentomino.moveDown()
+			if not board.isPentominoValid(pentomino):
+				pentomino.moveUp()
+			else:
+				lastPlayerDownTime = time.time()
+
+def draw(board):
+	SPRITEBATCH.fill(BLACK)
+	board.drawBoard(SPRITEBATCH, LEFT_RIGHT_MARGIN, TOP_MARGIN)
+	pygame.display.update()
+
+def checkQuit():
+	if pygame.event.peek(QUIT):
+		quit()
+
+	for event in pygame.event.get(KEYUP):
+		if event.key == K_ESCAPE:
+			quit()
+		else:
+			pygame.event.post(event)
 
 def quit():
 	pygame.quit()
 	sys.exit()
+
+
+def getRandomColor():
+	return random.choice(COLORS)
+
 
 if __name__ == '__main__':
 	main()

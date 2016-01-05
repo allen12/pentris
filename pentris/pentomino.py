@@ -38,3 +38,6 @@ class Pentomino:
 
 	def moveDown(self):
 		self.y += 1
+
+	def moveUp(self):
+		self.y -= 1

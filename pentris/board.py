@@ -32,10 +32,11 @@ class Board:
 
 	def __init__(self, board_width, board_height, mino_size):
 		# Create an empty board and store instance variables
+		# BOARD_WIDTH and BOARD_HEIGHT are number of minos, NOT pixels!
 		self.board = []
 
-		for i in range(self.board_height):
-			self.board.append([EMPTY] * board_width)
+		for i in range(board_height):
+			self.board.append([self.EMPTY] * board_width)
 
 		self.MINO_SIZE = mino_size
 		self.BOARD_WIDTH = board_width
@@ -87,8 +88,8 @@ class Board:
 		# draws each individual mino on the board
 		for y in range(self.BOARD_HEIGHT):
 			for x in range(self.BOARD_WIDTH):
-				if board[y][x] != ".":
-					self.drawMino(spritebatch, x, y, board[y][x], x_coord, y_coord)
+				if self.board[y][x] != ".":
+					self.drawMino(spritebatch, x, y, self.board[y][x], x_coord, y_coord)
 
 	def drawMino(self, spritebatch, mino_x, mino_y, color, board_x, board_y):
 		# color should be an RGB tuple
