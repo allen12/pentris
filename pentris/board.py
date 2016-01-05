@@ -65,7 +65,7 @@ class Board:
 					self.board[row+1] = self.board[row]
 
 				# remove the top line
-				self.board[0] = [EMPTY]*self.BOARD_WIDTH
+				self.board[0] = [self.EMPTY]*self.BOARD_WIDTH
 
 				# On the next iteration, make sure we check te line we just pulled down
 				y += 1

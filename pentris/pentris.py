@@ -28,7 +28,7 @@ BOARD_HEIGHT = MINO_SIZE * BOARD_MINO_HEIGHT   # Pixel height of board
 LEFT_RIGHT_MARGIN = (WINDOW_WIDTH - BOARD_WIDTH)//2
 TOP_MARGIN = WINDOW_HEIGHT - BOARD_HEIGHT - 10
 
-MOVE_SIDEWAYS_TIME = 0.10      # delay to keep moving a pentomino sideways
+MOVE_SIDEWAYS_TIME = 0.16      # delay to keep moving a pentomino sideways
 SOFT_DROP_TIME = 0.08          # delay to keep soft dropping a pentomino
 
 # COLOR DEFINITIONS
@@ -96,8 +96,8 @@ def play():
 
 	while True: # infinite game loop
 
-		if (currentPiece != None):
-			print("currentPiece: " + str(currentPiece.x) + " " + str(currentPiece.y))
+		# if (currentPiece != None):
+		# 	print("currentPiece: " + str(currentPiece.x) + " " + str(currentPiece.y))
 
 		checkQuit()
 
@@ -110,9 +110,63 @@ def play():
 			if not board.isPentominoValid(currentPiece):
 				return
 
+		# if piece is currently detected as moving sideways or soft dropping, do that
 		handlePentominoMovement(board, currentPiece, goingDown, goingLeft, goingRight)
 
-		# if current pieece has landed on the board, then clear any complete lines
+		# handle user input events
+		for event in pygame.event.get(KEYUP):
+			if event.key == K_LEFT:
+				goingLeft = False
+			elif event.key == K_RIGHT:
+				goingRight = False
+			elif event.key == K_DOWN:
+				goingDown = False
+
+		for event in pygame.event.get(KEYDOWN):
+			# sideways movements
+			if event.key == K_LEFT:
+				currentPiece.moveLeft()
+				if not board.isPentominoValid(currentPiece):
+					currentPiece.moveRight()
+				else:
+					goingLeft = True
+					lastPlayerSidewaysTime = time.time()
+			elif event.key == K_RIGHT:
+				currentPiece.moveRight()
+				if not board.isPentominoValid(currentPiece):
+					currentPiece.moveLeft()
+				else:
+					lastPlayerSidewaysTime = time.time()
+					goingRight = True
+
+			# soft drop movements
+			elif event.key == K_DOWN:
+				currentPiece.moveDown()
+				if not board.isPentominoValid(currentPiece):
+					currentPiece.moveUp()
+				else:
+					lastPlayerDownTime = time.time()
+					goingDown = True
+
+			# hard drop movements
+			elif event.key == K_SPACE:
+				while board.isPentominoValid(currentPiece):
+					currentPiece.moveDown()
+
+				currentPiece.moveUp()
+
+			# rotations
+			elif event.key == K_UP:
+				currentPiece.rotateClockwise()
+				if not board.isPentominoValid(currentPiece):
+					currentPiece.rotateCounterclockwise()
+
+			elif event.key == K_z:
+				currentPiece.rotateCounterclockwise
+				if not board.isPentominoValid(currentPiece):
+					currentPiece.rotateClockwise()
+
+		# if current piece has landed on the board, then clear any complete lines
 		if handlePentominoFall(board, currentPiece, fallTime):
 			board.addPentominoToBoard(currentPiece)
 			currentPiece = None
