@@ -19,8 +19,8 @@ WINDOW_WIDTH = 900      # can be adjusted
 WINDOW_HEIGHT = 675     # 4:3 aspect ratio preferred
 
 MINO_SIZE = 26      # Length and width of a single mino block
-BOARD_MINO_WIDTH = 12    # Number of minos te width of the playing field
-BOARD_MINO_HEIGHT = 20   # Number of minos the height
+BOARD_MINO_WIDTH = 14    # Number of minos te width of the playing field
+BOARD_MINO_HEIGHT = 24   # Number of minos the height
 
 BOARD_WIDTH = MINO_SIZE * BOARD_MINO_WIDTH     # Pixel width of board
 BOARD_HEIGHT = MINO_SIZE * BOARD_MINO_HEIGHT   # Pixel height of board
@@ -30,6 +30,8 @@ TOP_MARGIN = WINDOW_HEIGHT - BOARD_HEIGHT - 10
 
 MOVE_SIDEWAYS_TIME = 0.16      # delay to keep moving a pentomino sideways
 SOFT_DROP_TIME = 0.08          # delay to keep soft dropping a pentomino
+
+
 
 # COLOR DEFINITIONS
 #          ( R ,  G ,  B )
@@ -50,10 +52,13 @@ YELLOW   = (255, 255,   0)
 COLORS = (AQUA, BLUE, FUSCHIA, GREEN, LIME, NAVY_BLU, PURPLE,
 			RED, SILVER, TEAL, WHITE, YELLOW)
 
+TEXTCOLOR = WHITE
+
 def main():
-	global FPS_CLOCK, SPRITEBATCH
+	global FPS_CLOCK, SPRITEBATCH, BASICFONT
 	pygame.init()
 	FPS_CLOCK = pygame.time.Clock()
+	BASICFONT = pygame.font.Font('freesansbold.ttf', 28)
 	SPRITEBATCH = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 	pygame.display.set_caption("Pentris")
 
@@ -68,7 +73,7 @@ def main():
 	SPRITEBATCH.blit(background, (0, WINDOW_HEIGHT//2 - 100))
 	pygame.display.flip()
 
-	pygame.mixer.music.load('tetris.mid')   # start playing the tetris music
+	pygame.mixer.music.load('tetris_m_cut.mp3')   # start playing the tetris music
 	pygame.mixer.music.play(-1, 0.0)        # loop indefinitely
 	play()
 	pygame.mixer.music.stop()
@@ -78,7 +83,7 @@ def play():
 	board = Board(BOARD_MINO_WIDTH, BOARD_MINO_HEIGHT, MINO_SIZE)
 	factory = Factory()
 
-	global lastFallTime, lastPlayerDownTime, lastPlayerSidewaysTime
+	global lastFallTime, lastPlayerDownTime, lastPlayerSidewaysTime, score
 
 	lastFallTime = time.time()             # last time the piece fell downwards by itself
 	lastPlayerDownTime =  time.time()      # last time the player soft drops
@@ -90,9 +95,10 @@ def play():
 	nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 
 	goingDown = goingLeft = goingRight = False
-	level = score = 0
+	level = 0
+	score = 0
 	lines = 0
-	fallTime = 0.5                         # how many seconds pass for piece to auto-fall one space
+	fallTime = 1.00 - level*0.08         # how many seconds pass for piece to auto-fall one space
 
 	while True: # infinite game loop
 
@@ -147,11 +153,13 @@ def play():
 				else:
 					lastPlayerDownTime = time.time()
 					goingDown = True
+					score += 1
 
 			# hard drop movements
 			elif event.key == K_SPACE:
 				while board.isPentominoValid(currentPiece):
 					currentPiece.moveDown()
+					score += 2
 
 				currentPiece.moveUp()
 
@@ -162,7 +170,7 @@ def play():
 					currentPiece.rotateCounterclockwise()
 
 			elif event.key == K_z:
-				currentPiece.rotateCounterclockwise
+				currentPiece.rotateCounterclockwise()
 				if not board.isPentominoValid(currentPiece):
 					currentPiece.rotateClockwise()
 
@@ -170,16 +178,31 @@ def play():
 		if handlePentominoFall(board, currentPiece, fallTime):
 			board.addPentominoToBoard(currentPiece)
 			currentPiece = None
+
 			lines_cleared = board.checkForCompleteLines()
 			lines += lines_cleared
-			score += int(2250*lines_cleared**2 - 3850*lines_cleared + 900)
-			level = lines // 10
 
-		draw(board, currentPiece)
+			if lines_cleared == 1:
+				score += 1000 * (level+1)
+			elif lines_cleared == 2:
+				score += 3500 * (level+1)
+			elif lines_cleared == 3:
+				score += 7000 * (level+1)
+			elif lines_cleared == 4:
+				score += 15000 * (level+1)
+			elif lines_cleared == 5:
+				score += 35000 * (level+1)
+
+			level = lines // 5
+			fallTime = 1.00 - level * 0.08
+			if fallTime < 0.04:
+				fallTime = 0.04
+
+		draw(board, currentPiece, nextPiece, level, score, lines)
 		FPS_CLOCK.tick(FPS)
 
 def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
-	global lastPlayerDownTime, lastPlayerSidewaysTime
+	global lastPlayerDownTime, lastPlayerSidewaysTime, score
 
 	if time.time() - lastPlayerSidewaysTime > MOVE_SIDEWAYS_TIME:
 		if goingLeft:
@@ -202,6 +225,7 @@ def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
 				pentomino.moveUp()
 			else:
 				lastPlayerDownTime = time.time()
+				score += 1
 
 
 def handlePentominoFall(board, pentomino, fallTime):
@@ -221,9 +245,37 @@ def handlePentominoFall(board, pentomino, fallTime):
 		else:
 			return True
 
-def draw(board, pentomino):
+def draw(board, pentomino, next_pentomino, level, score, lines):
+	global SPRITEBATCH, BASICFONT
+
 	SPRITEBATCH.fill(BLACK)
 	board.drawBoard(SPRITEBATCH, LEFT_RIGHT_MARGIN, TOP_MARGIN)
+
+    # draw the score text
+	scoreSurf = BASICFONT.render('Score: %s' % score, True, TEXTCOLOR)
+	scoreRect = scoreSurf.get_rect()
+	scoreRect.topleft = (WINDOW_WIDTH - 250, 20)
+	SPRITEBATCH.blit(scoreSurf, scoreRect)
+
+    # draw the level text
+	levelSurf = BASICFONT.render('Level: %s' % level, True, TEXTCOLOR)
+	levelRect = levelSurf.get_rect()
+	levelRect.topleft = (WINDOW_WIDTH - 250, 50)
+	SPRITEBATCH.blit(levelSurf, levelRect)
+
+    # draw the lines text
+	levelSurf = BASICFONT.render('Lines: %s' % lines, True, TEXTCOLOR)
+	levelRect = levelSurf.get_rect()
+	levelRect.topleft = (WINDOW_WIDTH - 250, 80)
+	SPRITEBATCH.blit(levelSurf, levelRect)
+
+	# draw the "next" piece
+	nextSurf = BASICFONT.render('Next:', True, TEXTCOLOR)
+	nextRect = nextSurf.get_rect()
+	nextRect.topleft = (120, WINDOW_HEIGHT - 120)
+	SPRITEBATCH.blit(nextSurf, nextRect)
+
+	board.drawPentominoPixels(SPRITEBATCH, next_pentomino, 120 - MINO_SIZE, WINDOW_HEIGHT - 80)
 
 	if pentomino != None:
 		board.drawPentomino(SPRITEBATCH, pentomino, LEFT_RIGHT_MARGIN, TOP_MARGIN)

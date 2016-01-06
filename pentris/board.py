@@ -3,7 +3,7 @@ about colors and is represented by a grid of arbitrary size, constructed
 at runtime.
 """
 
-import pygame
+import pygame, sys
 from pygame.locals import *
 
 class Board:
@@ -58,7 +58,9 @@ class Board:
 		numLines = 0
 
 		# check each row, start from bottom of board
-		for y in range(self.BOARD_HEIGHT - 1, -1, -1):
+		y = self.BOARD_HEIGHT - 1
+		while y >= 0:
+
 			if self.isLineComplete(y):
 				# shift every row above down one row
 				for row in range(y-1, -1, -1):
@@ -71,6 +73,7 @@ class Board:
 				y += 1
 				numLines += 1
 
+			y -= 1
 		return numLines
 
 	def drawBoard(self, spritebatch, x_coord, y_coord):
@@ -108,6 +111,17 @@ class Board:
 				if (template[y][x] != self.EMPTY):
 					self.drawMino(spritebatch, x + pentomino.x, y + pentomino.y, pentomino.color, board_x, board_y)
 
+	def drawPentominoPixels(self, spritebatch, pentomino, pixel_x, pixel_y):
+		template = pentomino.getCurrentTemplate()
+
+		for y in range(len(template)):
+			for x in range(len(template[0])):
+				if (template[y][x] != self.EMPTY):
+					pygame.draw.rect(spritebatch, pentomino.color,
+						(x * self.MINO_SIZE + pixel_x+1, y * self.MINO_SIZE + pixel_y+1, 
+							self.MINO_SIZE-1, self.MINO_SIZE-1))
+
+
 	def isOnTheBoard(self, x, y):
 		return x >= 0 and x < self.BOARD_WIDTH and y < self.BOARD_HEIGHT
 
@@ -118,6 +132,7 @@ class Board:
 
 		for y in range(len(template)):
 			for x in range(len(template[0])):
+
 				if (template[y][x] == self.EMPTY):
 					continue
 
