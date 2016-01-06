@@ -3,7 +3,7 @@ about colors and is represented by a grid of arbitrary size, constructed
 at runtime.
 """
 
-import pygame, sys
+import pygame, sys, copy
 from pygame.locals import *
 
 class Board:
@@ -15,6 +15,7 @@ class Board:
 	BLUE     = (  0,   0, 255)
 	FUSCHIA  = (255,   0, 255)
 	GREEN    = (  0, 128,   0)
+	GRAY     = ( 80,  80,  80)
 	AQUA     = (  0, 255, 255)
 	BLACK    = (  0,   0,   0)
 	LIME     = (  0, 255,   0)
@@ -103,6 +104,13 @@ class Board:
 
 		pygame.draw.rect(spritebatch, color, (pixel_x+1, pixel_y+1, self.MINO_SIZE-1, self.MINO_SIZE-1))
 
+	def drawGhostMino(self, spritebatch, mino_x, mino_y, color, board_x, board_y):
+		# same as drawMino except draws the outlines of the minos instead
+		pixel_x = board_x + (mino_x * self.MINO_SIZE)
+		pixel_y = board_y + (mino_y * self.MINO_SIZE)
+
+		pygame.draw.rect(spritebatch, color, (pixel_x+1, pixel_y+1, self.MINO_SIZE-1, self.MINO_SIZE-1), 1)
+
 	def drawPentomino(self, spritebatch, pentomino, board_x, board_y):
 		template = pentomino.getCurrentTemplate()
 
@@ -110,6 +118,23 @@ class Board:
 			for x in range(len(template[0])):
 				if (template[y][x] != self.EMPTY):
 					self.drawMino(spritebatch, x + pentomino.x, y + pentomino.y, pentomino.color, board_x, board_y)
+
+	def drawGhostPentomino(self, spritebatch, pentomino, board_x, board_y):
+		# draws the pentomino ghost at the location at which if the user were to hard drop
+		pentomino_copy = copy.deepcopy(pentomino)
+
+		while self.isPentominoValid(pentomino_copy):
+			pentomino_copy.moveDown()
+
+		pentomino_copy.moveUp()
+		template = pentomino.getCurrentTemplate()
+
+		for y in range(len(template)):
+			for x in range(len(template[0])):
+				if (template[y][x] != self.EMPTY):
+					self.drawGhostMino(spritebatch, x + pentomino_copy.x, y + pentomino_copy.y, 
+						self.GRAY, board_x, board_y)
+
 
 	def drawPentominoPixels(self, spritebatch, pentomino, pixel_x, pixel_y):
 		template = pentomino.getCurrentTemplate()

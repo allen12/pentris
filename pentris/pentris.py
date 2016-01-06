@@ -28,10 +28,8 @@ BOARD_HEIGHT = MINO_SIZE * BOARD_MINO_HEIGHT   # Pixel height of board
 LEFT_RIGHT_MARGIN = (WINDOW_WIDTH - BOARD_WIDTH)//2
 TOP_MARGIN = WINDOW_HEIGHT - BOARD_HEIGHT - 10
 
-MOVE_SIDEWAYS_TIME = 0.16      # delay to keep moving a pentomino sideways
-SOFT_DROP_TIME = 0.08          # delay to keep soft dropping a pentomino
-
-
+MOVE_SIDEWAYS_TIME = 0.12      # delay to keep moving a pentomino sideways
+SOFT_DROP_TIME = 0.06          # delay to keep soft dropping a pentomino
 
 # COLOR DEFINITIONS
 #          ( R ,  G ,  B )
@@ -58,7 +56,7 @@ def main():
 	global FPS_CLOCK, SPRITEBATCH, BASICFONT
 	pygame.init()
 	FPS_CLOCK = pygame.time.Clock()
-	BASICFONT = pygame.font.Font('freesansbold.ttf', 28)
+	BASICFONT = pygame.font.Font(None, 36)
 	SPRITEBATCH = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 	pygame.display.set_caption("Pentris")
 
@@ -213,6 +211,8 @@ def play():
 
 		# if current piece has landed on the board, then clear any complete lines
 		if handlePentominoFall(board, currentPiece, fallTime):
+			global MOVE_SIDEWAYS_TIME, SOFT_DROP_TIME
+
 			board.addPentominoToBoard(currentPiece)
 			usedHold = False
 			currentPiece = None
@@ -233,10 +233,13 @@ def play():
 
 			level = lines // 5
 			fallTime = 1.00 - level * 0.08
-			if fallTime < 0.04:
-				fallTime = 0.04
+			MOVE_SIDEWAYS_TIME = 0.12 - level * 0.01
+			SOFT_DROP_TIME = 0.06 - level * 0.01
+			if fallTime < 0.03:
+				fallTime = 0.03
 
 		draw(board, currentPiece, nextPiece, holdPiece, level, score, lines)
+		pygame.event.pump()
 		FPS_CLOCK.tick(FPS)
 
 def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
@@ -324,6 +327,7 @@ def draw(board, pentomino, next_pentomino, hold_petrimino, level, score, lines):
 		board.drawPentominoPixels(SPRITEBATCH, hold_petrimino, 120 - MINO_SIZE, 100)
 	
 	if pentomino != None:
+		board.drawGhostPentomino(SPRITEBATCH, pentomino, LEFT_RIGHT_MARGIN, TOP_MARGIN)
 		board.drawPentomino(SPRITEBATCH, pentomino, LEFT_RIGHT_MARGIN, TOP_MARGIN)
 
 	pygame.display.update()
