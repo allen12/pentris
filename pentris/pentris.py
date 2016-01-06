@@ -74,6 +74,7 @@ def main():
 	pygame.display.flip()
 
 	pygame.mixer.music.load('tetris_m_cut.mp3')   # start playing the tetris music
+	pygame.mixer.music.set_volume(0.5)
 	pygame.mixer.music.play(-1, 0.0)        # loop indefinitely
 	play()
 	pygame.mixer.music.stop()
@@ -90,9 +91,13 @@ def play():
 	lastPlayerSidewaysTime = time.time()   # last time the player moves a piece sideways
 
 	PENTOMINO_START_X = BOARD_MINO_WIDTH // 2 - 3   # coordinates of starting location
+	PENTOMINO_START_Y = -1
 
 	currentPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 	nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
+	holdPiece = None
+
+	usedHold = False    # Set to true if player uses "Hold" on the current piece
 
 	goingDown = goingLeft = goingRight = False
 	level = 0
@@ -157,10 +162,15 @@ def play():
 
 			# hard drop movements
 			elif event.key == K_SPACE:
+
+				hold = pygame.mixer.Sound("harddrop.ogg") 
+				hold.play()
+
 				while board.isPentominoValid(currentPiece):
 					currentPiece.moveDown()
 					score += 2
 
+				score -= 2
 				currentPiece.moveUp()
 
 			# rotations
@@ -174,9 +184,37 @@ def play():
 				if not board.isPentominoValid(currentPiece):
 					currentPiece.rotateClockwise()
 
+			# hold
+			elif event.key == K_LSHIFT or event.key == K_RSHIFT:
+				if usedHold:    # not allowed to hold more than once per falling piece
+					continue
+
+				hold = pygame.mixer.Sound("hold.wav") 
+				hold.play()
+
+				usedHold = True
+				# reset piece orientation
+				currentPiece.x = PENTOMINO_START_X
+				currentPiece.y = PENTOMINO_START_Y
+				currentPiece.rotation = 0
+
+				tempPiece = holdPiece    # swap hold and currentPiece
+				holdPiece = currentPiece
+				currentPiece = tempPiece
+
+				if currentPiece == None:
+					currentPiece = nextPiece
+					nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
+
+				# reset piece orientation
+				currentPiece.x = PENTOMINO_START_X
+				currentPiece.y = PENTOMINO_START_Y
+				currentPiece.rotation = 0
+
 		# if current piece has landed on the board, then clear any complete lines
 		if handlePentominoFall(board, currentPiece, fallTime):
 			board.addPentominoToBoard(currentPiece)
+			usedHold = False
 			currentPiece = None
 
 			lines_cleared = board.checkForCompleteLines()
@@ -198,7 +236,7 @@ def play():
 			if fallTime < 0.04:
 				fallTime = 0.04
 
-		draw(board, currentPiece, nextPiece, level, score, lines)
+		draw(board, currentPiece, nextPiece, holdPiece, level, score, lines)
 		FPS_CLOCK.tick(FPS)
 
 def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
@@ -245,7 +283,7 @@ def handlePentominoFall(board, pentomino, fallTime):
 		else:
 			return True
 
-def draw(board, pentomino, next_pentomino, level, score, lines):
+def draw(board, pentomino, next_pentomino, hold_petrimino, level, score, lines):
 	global SPRITEBATCH, BASICFONT
 
 	SPRITEBATCH.fill(BLACK)
@@ -254,19 +292,19 @@ def draw(board, pentomino, next_pentomino, level, score, lines):
     # draw the score text
 	scoreSurf = BASICFONT.render('Score: %s' % score, True, TEXTCOLOR)
 	scoreRect = scoreSurf.get_rect()
-	scoreRect.topleft = (WINDOW_WIDTH - 250, 20)
+	scoreRect.topleft = (WINDOW_WIDTH - 250, 30)
 	SPRITEBATCH.blit(scoreSurf, scoreRect)
 
     # draw the level text
 	levelSurf = BASICFONT.render('Level: %s' % level, True, TEXTCOLOR)
 	levelRect = levelSurf.get_rect()
-	levelRect.topleft = (WINDOW_WIDTH - 250, 50)
+	levelRect.topleft = (WINDOW_WIDTH - 250, 70)
 	SPRITEBATCH.blit(levelSurf, levelRect)
 
     # draw the lines text
 	levelSurf = BASICFONT.render('Lines: %s' % lines, True, TEXTCOLOR)
 	levelRect = levelSurf.get_rect()
-	levelRect.topleft = (WINDOW_WIDTH - 250, 80)
+	levelRect.topleft = (WINDOW_WIDTH - 250, 110)
 	SPRITEBATCH.blit(levelSurf, levelRect)
 
 	# draw the "next" piece
@@ -274,9 +312,17 @@ def draw(board, pentomino, next_pentomino, level, score, lines):
 	nextRect = nextSurf.get_rect()
 	nextRect.topleft = (120, WINDOW_HEIGHT - 120)
 	SPRITEBATCH.blit(nextSurf, nextRect)
-
 	board.drawPentominoPixels(SPRITEBATCH, next_pentomino, 120 - MINO_SIZE, WINDOW_HEIGHT - 80)
 
+	# draw the "hold" piece
+	holdSurf = BASICFONT.render('Hold:', True, TEXTCOLOR)
+	holdRect = holdSurf.get_rect()
+	holdRect.topleft = (120, 60)
+	SPRITEBATCH.blit(holdSurf, holdRect)
+
+	if hold_petrimino != None:
+		board.drawPentominoPixels(SPRITEBATCH, hold_petrimino, 120 - MINO_SIZE, 100)
+	
 	if pentomino != None:
 		board.drawPentomino(SPRITEBATCH, pentomino, LEFT_RIGHT_MARGIN, TOP_MARGIN)
 
