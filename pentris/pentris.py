@@ -2,6 +2,7 @@
 blocks (pentominos).
 
 Allen Cheng | allen12@umd.edu | computer_allen@yahoo.com
+https://github.com/allen12/pentris
 """
 
 from copy import deepcopy
@@ -54,35 +55,29 @@ TEXTCOLOR = WHITE
 
 def main():
 	global FPS_CLOCK, SPRITEBATCH, BASICFONT
+
 	pygame.init()
 	FPS_CLOCK = pygame.time.Clock()
 	BASICFONT = pygame.font.Font(None, 36)
 	SPRITEBATCH = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-	pygame.display.set_caption("Pentris")
 
-	background = pygame.Surface(SPRITEBATCH.get_size())
-	background = background.convert()
-	background.fill((0, 0, 0))
-	font = pygame.font.Font(None, 255)
-	text = font.render("Pentris", 1, (255, 255, 255))
-	textpos = text.get_rect()
-	textpos.centerx = background.get_rect().centerx
-	background.blit(text, textpos)
-	SPRITEBATCH.blit(background, (0, WINDOW_HEIGHT//2 - 100))
-	pygame.display.flip()
-
+	# start playing the background music
 	pygame.mixer.music.load('tetris_m_cut.mp3')   # start playing the tetris music
 	pygame.mixer.music.set_volume(0.5)
 	pygame.mixer.music.play(-1, 0.0)        # loop indefinitely
+
 	play()
+
 	pygame.mixer.music.stop()
+
 	quit()
 
 def play():
-	board = Board(BOARD_MINO_WIDTH, BOARD_MINO_HEIGHT, MINO_SIZE)
-	factory = Factory()
 
 	global lastFallTime, lastPlayerDownTime, lastPlayerSidewaysTime, score
+
+	board = Board(BOARD_MINO_WIDTH, BOARD_MINO_HEIGHT, MINO_SIZE)
+	factory = Factory()
 
 	lastFallTime = time.time()             # last time the piece fell downwards by itself
 	lastPlayerDownTime =  time.time()      # last time the player soft drops
@@ -91,16 +86,20 @@ def play():
 	PENTOMINO_START_X = BOARD_MINO_WIDTH // 2 - 3   # coordinates of starting location
 	PENTOMINO_START_Y = -1
 
+	# initialize the starting pentomino pieces
 	currentPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 	nextPiece = Pentomino(factory.obtainShape(), getRandomColor(), PENTOMINO_START_X)
 	holdPiece = None
 
 	usedHold = False    # Set to true if player uses "Hold" on the current piece
 
+	# keep track of whether piece is currently moving or not through the game loop
 	goingDown = goingLeft = goingRight = False
+
 	level = 0
 	score = 0
 	lines = 0
+
 	fallTime = 1.00 - level*0.08         # how many seconds pass for piece to auto-fall one space
 
 	while True: # infinite game loop
@@ -187,7 +186,7 @@ def play():
 				if usedHold:    # not allowed to hold more than once per falling piece
 					continue
 
-				hold = pygame.mixer.Sound("hold.wav") 
+				hold = pygame.mixer.Sound("hold.wav")   # play "hold" sound effect
 				hold.play()
 
 				usedHold = True
@@ -213,14 +212,14 @@ def play():
 		if handlePentominoFall(board, currentPiece, fallTime):
 			global MOVE_SIDEWAYS_TIME, SOFT_DROP_TIME
 
-			board.addPentominoToBoard(currentPiece)
+			board.addPentominoToBoard(currentPiece)     # permanently add to board
 			usedHold = False
 			currentPiece = None
 
-			lines_cleared = board.checkForCompleteLines()
+			lines_cleared = board.checkForCompleteLines()    # obtain how many lines cleared
 			lines += lines_cleared
 
-			if lines_cleared == 1:
+			if lines_cleared == 1:                 # adjust score as necessary
 				score += 1000 * (level+1)
 			elif lines_cleared == 2:
 				score += 3500 * (level+1)
@@ -231,6 +230,7 @@ def play():
 			elif lines_cleared == 5:
 				score += 35000 * (level+1)
 
+			# calculate increases in level and difficulty, if necessary
 			level = lines // 5
 			fallTime = 1.00 - level * 0.08
 			MOVE_SIDEWAYS_TIME = 0.12 - level * 0.01
@@ -238,13 +238,15 @@ def play():
 			if fallTime < 0.03:
 				fallTime = 0.03
 
+		# draw everything, including the board and status updates
 		draw(board, currentPiece, nextPiece, holdPiece, level, score, lines)
-		pygame.event.pump()
+		pygame.event.pump()   # needed if no user input events in a while, otherwise game freezes
 		FPS_CLOCK.tick(FPS)
 
 def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
 	global lastPlayerDownTime, lastPlayerSidewaysTime, score
 
+	# only allow moving sideways if it has been MOVE_SIDEWAYS_TIME seconds since last movement
 	if time.time() - lastPlayerSidewaysTime > MOVE_SIDEWAYS_TIME:
 		if goingLeft:
 			pentomino.moveLeft()
@@ -259,6 +261,7 @@ def handlePentominoMovement(board, pentomino, goingDown, goingLeft, goingRight):
 			else:
 				lastPlayerSidewaysTime = time.time()
 
+	# similar action with soft dropping / moving downwards
 	if time.time() - lastPlayerDownTime > SOFT_DROP_TIME:
 		if goingDown:
 			pentomino.moveDown()
@@ -345,7 +348,6 @@ def checkQuit():
 def quit():
 	pygame.quit()
 	sys.exit()
-
 
 def getRandomColor():
 	return random.choice(COLORS)
