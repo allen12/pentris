@@ -9,3 +9,6 @@ Planned future features:
 1. Welcome screen to change starting level
 2. Allow multiple replay attempts in the same session to store high score
 3. Multiplayer pentris! (if game is not too hard) Clearing lines would "send" garbage lines to the opponent. You win by topping the opponent out!
+4. Smoother, more bug-free playthroughs!
+
+Background music belongs to the TetrisFriends Marathon game.
